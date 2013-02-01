@@ -1,0 +1,40 @@
+div.controlPanel {
+	border: 5px solid #999999;
+	overflow: hidden;
+	position: fixed;
+	right: 10px;
+	background-color: #EEEEEE;;
+}
+
+div.controlPanel input[type=button]{
+	float: right;
+	margin: 2px;
+}
+
+div.controlPanel .error{
+	float: left;
+	margin: 2px;
+	color: red;
+	display: none;
+}
+
+.boardTableContainer{
+	padding-top: 40px;
+}
+
+table, tr, td, th{
+	border: 1px solid black;
+	border-spacing: 0px;
+	margin: 0px;
+	padding: 0px;
+}
+
+td, th {
+	padding: 2px;
+	text-align: center;
+}
+
+th {
+	background-color: #CFCFCF;
+}
+

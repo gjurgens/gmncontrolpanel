@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>GuessMyNumber Admin Board</title>
+
+		<link rel="stylesheet" href="css/reset.css">
+		<link rel="stylesheet" href="css/main.css">
+		<link rel="stylesheet" href="css/login.css">
+		<link rel="stylesheet" href="css/board.css">
+
+		<script type="text/javascript" src="js/libs/jquery-1.7.1.min.js"></script>
+		<script type="text/javascript" src="js/libs/handlebars-1.0.rc.1.js"></script>
+		<script type="text/javascript" src="js/GMN/main.js"></script>
+		<script type="text/javascript" src="js/GMN/Server/Config.js"></script>
+		<script type="text/javascript" src="js/GMN/Server/Config.js"></script>
+		<script type="text/javascript" src="js/GMN/Admin/Board.js"></script>
+		<script type="text/javascript">
+			Handlebars.registerHelper('lastAttemp', function(serverTime,attempTime) {
+				function mask(number) {
+					return number < 10 ? "0" + number.toString() : number.toString();
+				}
+				var dif = parseInt((serverTime - attempTime)/1000);
+				var str = mask(parseInt(dif/60/60,10)) + ":" + mask(parseInt(dif/60),10) + ":" + mask(dif%60);
+				return str;
+			});
+			Handlebars.registerHelper('rpm', function(tot,first,last) {
+				return Math.round(tot / ((last - first) / 1000 / 60));
+			});
+			Handlebars.registerHelper('triesPerGuesses', function(wrong,correct) {
+				if(correct <= 0) return "-";
+				else return (wrong/correct).toFixed(2);
+			});
+			Handlebars.registerHelper('userColor', function(uuid) {
+				function mask(str) {
+					return str.length < 2 ? "0" + str : str;
+				}
+
+				var	ri = 0.60,
+					gi = 0.60,
+					bi = 0.60,
+					r = mask(parseInt((parseInt(uuid.substr(0,2),16) * (1-ri)) + (0xFF * ri),10).toString(16)),
+					g = mask(parseInt((parseInt(uuid.substr(2,2),16) * (1-gi)) + (0xFF * gi),10).toString(16)),
+					b = mask(parseInt((parseInt(uuid.substr(4,2),16) * (1-bi)) + (0xFF * bi),10).toString(16));
+				return "#" + r + g + b;
+			});
+		</script>
+		<script type="text/javascript">
+			$(window).ready(function(){
+				var board = GMN.Admin.Board();
+
+				var errorHandler = function(status, msg){
+					board.stop();
+					$("#startButton").removeAttr("disabled");
+					$("#stopButton").attr("disabled", "disabled");
+					$("#boardContainer").hide();
+					$("#loginContainer").show();
+					$(".error").text("ERROR " + status + ": " + msg.message).show();
+				}
+
+				$("#loginButton").click(function(){
+					GMN.Server.Config.setServer($("#serverName").val());
+					GMN.Server.Config.setPort($("#serverPort").val());
+					GMN.Server.Config.setAdminPassword($("#adminPassword").val());
+					board.start(errorHandler);
+					$("#startButton").attr("disabled", "disabled");
+					$("#stopButton").removeAttr("disabled");
+					$("#loginContainer").hide();
+					$("#boardContainer").show();
+				});
+				$("#startButton").click(function(){
+					board.start(errorHandler);					
+					$("#startButton").attr("disabled", "disabled");
+					$("#stopButton").removeAttr("disabled");
+				});
+				$("#stopButton").click(function(){
+					board.stop();					
+					$("#startButton").removeAttr("disabled");
+					$("#stopButton").attr("disabled", "disabled");
+				});
+				$("#logoutButton").click(function(){
+					board.stop();
+					$("#startButton").removeAttr("disabled");
+					$("#stopButton").attr("disabled", "disabled");
+					$("#boardContainer").hide();
+					$("#loginContainer").show();				
+				});
+			})
+		</script>
+		<script id="board" type="text/x-handlebars-template">
+			<table>
+				<tr>
+					<th>Name</th>
+					<th>Ip Address</th>
+					<th>Active Number</th>
+					<th>Last guess attemp</th>
+					<th>Concted Time</th>
+					<th>Total Score</th>
+					<th>Tries/Guesses</th>
+					<th>Requests</th>
+					<th>Net. RPM</th>
+					<th>Total RPM</th>
+					<th colspan="3">Stats</th>
+				</tr>
+				{{#each players}}
+					<tr style="background-color:{{userColor this.publicUuid}};">
+						<td rowspan="5">{{this.name}}</td>
+						<td rowspan="5">{{this.userIp}}</td>
+						<td rowspan="5">{{#if this.activeNumber}}Yes{{else}}No{{/if}}</td>
+						<td rowspan="5">{{#if this.lastGuessAttemp}}{{lastAttemp this.serverTime this.lastGuessAttemp}}{{else}}Never{{/if}}</td>
+						<td rowspan="5">{{lastAttemp this.serverTime this.requests.first}}</td>
+						<td rowspan="5">{{this.score}}</td>
+						<td rowspan="5">{{triesPerGuesses this.stats.wrongGuessedNumbers.quantity this.stats.guessedNumbers.quantity}}</td>
+						<td rowspan="5">{{this.requests.quantity}}</td>
+						<td rowspan="5">{{rpm this.requests.quantity this.requests.first this.requests.last}}</td>
+						<td rowspan="5">{{rpm this.requests.quantity this.requests.first this.serverTime}}</td>
+						<td>Seted</td>
+						<td>{{this.stats.setedNumbers.quantity}}</td>
+						<td>{{this.stats.setedNumbers.score}}</td>
+					</tr>
+					<tr style="background-color:{{userColor this.publicUuid}};">
+						<td>Guessed</td>
+						<td>{{this.stats.guessedNumbers.quantity}}</td>
+						<td>{{this.stats.guessedNumbers.score}}</td>
+					</tr>
+					<tr style="background-color:{{userColor this.publicUuid}};">
+						<td>Tries Made</td>
+						<td>{{this.stats.wrongGuessedNumbers.quantity}}</td>
+						<td>{{this.stats.wrongGuessedNumbers.score}}</td>
+					</tr>
+					<tr style="background-color:{{userColor this.publicUuid}};">
+						<td>Tries Received</td>
+						<td>{{this.stats.wrongGuessNumbersReceived.quantity}}</td>
+						<td>{{this.stats.wrongGuessNumbersReceived.score}}</td>
+					</tr>
+					<tr style="background-color:{{userColor this.publicUuid}};">
+						<td>Wasted Requests</td>
+						<td>{{this.stats.wastedRequests.quantity}}</td>
+						<td>{{this.stats.wastedRequests.score}}</td>
+					</tr>
+				{{/each}}
+			</table>
+  		</script>
+
+	</head>
+	<body>
+		<div class="login" id="loginContainer">
+			<label for="serverName">Server:</label>
+			<input type="text" id="serverName" value="http://guessmynumber.jurgens.com.ar">
+			<label for="serverPort">Port:</label>
+			<input type="text" id="serverPort" value="80">
+			<label for="adminPassword">Password:</label>
+			<input type="password" id="adminPassword" value="1234">
+			<input type="button" id="loginButton" value="Login">
+			<div class="error">ERROR ERROR ERROR ERROR</div>
+		</div>
+		<div id="boardContainer" style="display:none;">
+			<div class="controlPanel">
+				<input type="button" id="logoutButton" value="Logout">
+				<input type="button" id="stopButton" value="Stop">
+				<input type="button" id="startButton" value="Start">
+				<div class="error">ERROR ERROR ERROR ERROR</div>
+			</div>
+			<div class="boardTableContainer">
+			</div>
+		</div>
+
+	</body>
+</html>

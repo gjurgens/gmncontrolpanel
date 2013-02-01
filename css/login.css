@@ -1,0 +1,26 @@
+div.login{
+	border: 5px solid #999999;
+	width: 400px;
+	overflow: hidden;
+	margin: auto;
+	padding: 10px;
+	background-color: #EEEEEE;
+}
+
+.login input{
+	float: right;
+	width: 300px;
+}
+
+.login label{
+	float: left;
+	clear:right;
+}
+
+div.login .error{
+	margin: 2px;
+	color: red;
+	clear: both;
+	text-align: center;
+	display: none;
+}
